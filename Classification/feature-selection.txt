@@ -1,0 +1,66 @@
+
+from scipy.stats import chi2_contingency
+
+
+
+#feature-selection
+##############
+catcols=columns
+numericcols=list(data.columns.values)
+catcols
+for a in catcols:
+
+  if a in numericcols:
+    numericcols.remove(a)
+numericcols
+#remove rate colume
+numericcols.remove('Rate')
+numericcols
+catcols
+############################
+
+data = data.loc[:, (data==1).mean() < 1]
+#data = data.loc[:, (data==0).mean() <= .5]
+
+colnames=list(data.columns.values)
+#anova for x=numeric  y=categorical
+anova_drop = []
+for c in numericcols:
+  #cc=c
+  if(c in colnames):
+    col = pd.DataFrame(data[c])
+    col.insert(1, 'Rate', data.loc[:, 'Rate'], True)
+    CategoryGroupLists = col.groupby(c)['Rate'].apply(list)
+    AnovaResults = f_oneway(*CategoryGroupLists)
+    AnovaResults = AnovaResults[1]
+    if AnovaResults > 0.05:
+        anova_drop.append(c)
+anova_drop
+data.drop(columns=anova_drop, axis=1, inplace=True)
+
+#######################################
+
+
+# Cross tabulation between categorical x and categorical y
+
+chi2_drop = []
+colnames=list(data.columns.values)
+for c in catcols:
+  #cc=c
+  ca=c
+  if(c in colnames ):
+    CrosstabResult = pd.crosstab(index=data[c], columns=data['Rate'])
+    print(CrosstabResult)
+    # Performing Chi-sq test
+    ChiSqResult = chi2_contingency(CrosstabResult)
+    ChiSqResult=ChiSqResult[1]
+    
+     # If P-Value&gt;0.05 then only we Accept the assumption(H0)
+
+
+    if ChiSqResult > 0.05:
+        chi2_drop.append(c)
+chi2_drop
+data.drop(columns=chi2_drop, axis=1, inplace=True)
+
+data
